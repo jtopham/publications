@@ -3,7 +3,7 @@
 
 Focal amplification and overexpression of E3 ubiquitin ligase genes CBLC and SMURF1 in patients with pancreatic ductal adenocarcinoma (in submission)
 
-> Code used for this project can be found [here](https://github.com/jtopham/publications/fxbin_prj).
+> Code used for this project can be found [here](https://github.com/jtopham/publications/tree/main/fxbin_prj).
 >
 
 <br>
