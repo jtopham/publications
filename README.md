@@ -28,7 +28,7 @@ Focal amplification and overexpression of E3 ubiquitin ligase genes CBLC and SMU
 
 [Endogenous Retrovirus Transcript Levels Are Associated with Immunogenic Signatures in Multiple Metastatic Cancer Types](https://pubmed.ncbi.nlm.nih.gov/32518206/)
 
-> [Molecular Cancer Therapeutics, 2020.
+> Molecular Cancer Therapeutics, 2020.
 > Code used for this project can be found [here](https://github.com/jtopham/).
 > 
 > *We performed bioinformatics analysis of genomic, transcriptomic and clinical data across an integrated cohort of 199 metastatic breast, colorectal and pancreatic ductal adenocarcinoma (PDAC) patient tumors. Within each cancer type, we identified a subgroup of viral mimicry tumors in which increased ERV levels were coupled with transcriptional signatures of autonomous antiviral response and immunogenicity. In addition, viral mimicry colorectal and pancreatic tumors showed increased expression of DNA demethylation gene TET2. Taken together, these data demonstrate the existence of an ERV-associated viral mimicry phenotype across three distinct metastatic cancer types, while indicating links between ERV abundance, epigenetic dysregulation and immunogenicity.*
