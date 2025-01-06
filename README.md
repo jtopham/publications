@@ -1,6 +1,13 @@
 ## **Publications**
 <br>
 
+Neutrophil Extracellular Trap gene expression signatures identify prognostic and targetable signaling axes for inhibiting metastasis of pancreatic tumours (in submission)
+
+> Code used for this project can be found [here](https://github.com/jtopham/publications/tree/main/NET_prj).
+>
+
+<br>
+
 Focal amplification and overexpression of E3 ubiquitin ligase genes CBLC and SMURF1 in patients with pancreatic ductal adenocarcinoma (in submission)
 
 > Code used for this project can be found [here](https://github.com/jtopham/publications/tree/main/fxbin_prj).

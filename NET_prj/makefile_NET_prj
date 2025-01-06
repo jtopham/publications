@@ -1,0 +1,146 @@
+# ------------------------------------------------------------------------------
+#                           _      _      _
+#              		 __(.)< __(.)> __(.)=
+#         	         \___)  \___)  \___)
+# ------------------------------------------------------------------------------
+# FILENAME : incoming_sample_pipe
+#
+# AUTHOR : James Topham
+#
+# DATE : Jan 2024
+#
+# DESCRIPTION :
+#
+#  - this script serves to process new hg38 samples
+#
+# MODULES :
+#
+#  - set up directory structure
+#  - re-align RNAseq BAM
+#  - feature count
+# ------------------------------------------------------------------------------
+#              	            _      _      _
+#          	    	 __(.)< __(.)> __(.)=
+#          	    	 \___)  \___)  \___)
+# ------------------------------------------------------------------------------
+# retain intermediate files
+.SECONDARY:
+
+# ------------------------------------------------------------------------------
+# tools and virtual environments used
+# ------------------------------------------------------------------------------
+# java 1.8
+java = /gsc/software/linux-x86_64/jre1.8.0_66/bin/java
+
+# python 2.7.10
+python = /usr/bin/python
+
+# picardtools 2.17.3
+picard = /projects/pangen/installs/picardtools/picard.jar
+
+# samtools 1.11
+samtools = /projects/pangen/installs/centos7/samtools-1.11/samtools
+
+# BWA 0.7.6a, from GSC
+bwa = /gsc/software/linux-x86_64/bwa-0.7.6a/bwa
+
+# ref genome for DNA libs
+ref_hg38 = /projects/pangen/analysis/jtopham/data/hg38_no_alt.fa
+ref_hg38_nochr = /projects/pangen/analysis/jtopham/data/hg38_no_alt_nochr.fa
+
+# bedtools and bedops
+bedtools = /projects/pangen/installs/bedtools2/bin
+bedops = /projects/pangen/installs/bedops/bin
+
+# GTF file for feature counts (GENCODE28; hg38)
+gtf_file = /projects/pangen/installs/arriba_v1.2.0/GENCODE28.gtf
+
+# subread
+subread = /projects/pangen/installs/subread-1.6.3-Linux-x86_64/bin
+
+# snpEFF
+snpEff = /projects/pangen/installs/snpeff/snpEff
+
+# manta
+manta = /projects/pangen/installs/manta-1.5.0.centos6_x86_64/bin
+
+# strelka
+strelka = /projects/pangen/installs/strelka-2.9.10.centos6_x86_64/bin/
+
+# snp-pileup for generating input for Facets
+snp-pileup = /projects/pangen/installs/facets/facets/inst/extcode/snp-pileup
+
+# Rscript
+Rscript = /gsc/software/linux-x86_64-centos7/R-3.5.1/bin/Rscript
+
+# star v2.7.3a
+star = /projects/pangen/installs/STAR-2.7.3a/bin/Linux_x86_64_static/STAR
+
+# star index for hg38
+starindex = /projects/pangen/installs/arriba_v1.2.0/STAR_index_hg38_GENCODE28/
+
+# bwa
+bwa = /projects/pangen/installs/bwa/bwa/bwa
+
+# arriba v1.2.0
+arriba = /projects/pangen/installs/arriba_v1.2.0/arriba
+
+# WGS path list
+wgs_paths = /projects/pangen/analysis/jtopham/wgs_paths.tsv
+
+# venv for mantis
+virtual_env_isovar = /projects/pangen/installs/virt_env/isovar_env/bin/activate
+
+# mantis v1.0.4
+mantis = /projects/pangen/installs/MANTIS-master/mantis.py
+
+# vcf 2 maf
+vcf2maf = /projects/pangen/installs/vcf2maf-1.6.22/vcf2maf.pl
+
+# VEP
+vep = /gsc/software/linux-x86_64-centos7/vep-103.1
+
+# CCDS based on GRCh37.p13, GCF_000001405.25
+CCDS = /projects/pangen/installs/vcf2maf-1.6.22/CCDS.current.bed.sorted
+
+exac = /projects/pangen/installs/vcf2maf-1.6.22/ExAC_nonTCGA.r0.3.1.sites_hg38.vep2.vcf.gz
+
+HASH := \#
+
+# ------------------------------------------------------------------------------
+# RNAseq BAMs are re-aligned with STAR
+# ------------------------------------------------------------------------------
+samples/%/hg38/rnaseq/gsc.bam :
+	BAM=$$(cat incoming_libs.tsv | awk '$$1 == "$*"' | awk '{print $$2}'); \
+	mkdir -p samples/$*/hg38/external samples/$*/hg38/rnaseq; \
+	${java} -jar ${picard} SamToFastq VALIDATION_STRINGENCY=LENIENT \
+	REFERENCE_SEQUENCE=${ref_hg38} I=$${BAM} F=samples/$*/hg38/rnaseq/1.fastq \
+	F2=samples/$*/hg38/rnaseq/2.fastq; \
+	${star} --runThreadN 2 --genomeDir ${starindex} \
+	--outFileNamePrefix samples/$*/hg38/rnaseq/ --sjdbGTFfile ${gtf_file} \
+	--readFilesIn samples/$*/hg38/rnaseq/1.fastq samples/$*/hg38/rnaseq/2.fastq \
+	--outSAMunmapped Within KeepPairs --chimSegmentMin 20 \
+	--outSAMmultNmax 1 --outSAMstrandField intronMotif \
+	--outFilterIntronMotifs RemoveNoncanonical \
+	--outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 202896839504; \
+	rm -rf samples/$*/hg38/rnaseq/_STAR* 
+	${java} -jar ${picard} MarkDuplicates O=$@ \
+	I=samples/$*/hg38/rnaseq/Aligned.sortedByCoord.out.bam \
+	M=samples/$*/hg38/rnaseq/markdupe.log ASSUME_SORTED=true \
+	VALIDATION_STRINGENCY=LENIENT; \
+	rm samples/$*/hg38/rnaseq/Aligned.sortedByCoord.out.bam; \
+	${samtools} index -@ 2 $@ samples/$*/hg38/rnaseq/gsc.bam.bai
+
+# ------------------------------------------------------------------------------
+# gather BAM statistics
+# ------------------------------------------------------------------------------
+samples/%/hg38/rnaseq/flagstat.txt : samples/%/hg38/rnaseq/gsc.bam
+	${samtools} flagstat -@ 2 samples/$*/hg38/rnaseq/gsc.bam > $@
+
+# ------------------------------------------------------------------------------
+# generate feature counts using SUBREAD
+# ------------------------------------------------------------------------------
+samples/%/hg38/rnaseq/feature_counts2.tsv : samples/%/hg38/rnaseq/flagstat.txt
+	${subread}/featureCounts -T 2 -s 1 -C -t 'gene' -a ${gtf_file} -o $@ \
+	samples/$*/hg38/rnaseq/gsc.bam
+
